@@ -3,17 +3,26 @@
 const { Sequelize } = require('sequelize');
 const { Web3 } = require('web3');
 const BlockchainLog = require('../models/blockchainlog');
+// const { _getLatestLogsTestnet } = require("../services/blockchainLogService");
+
 
 // Khởi tạo Web3 để kết nối với blockchain thông qua Ganache
 const web3 = new Web3('http://127.0.0.1:7545');
 
+// // Khởi tạo Web3 để kết nối với testnet (ví dụ: Sepolia)
+// const web3Testnet = new Web3('https://sepolia.infura.io/v3/7b59cf0ec66443d2a1b08540436854fd');
+
 // Khởi tạo hợp đồng thông minh từ ABI và địa chỉ contract
 const contractABI = require('../truffle/build/contracts/BlockchainLog.json');
-const contractAddress = "0x991A4312897a3DB36f98d239deB698ECd88121aB";
+const contractAddress = "0xAfBfC60d7902bAFDCB46287F2fB4F7E0116C3b8A";
 const contract = new web3.eth.Contract(contractABI.abi, contractAddress);
 
+// // Khởi tạo hợp đồng thông minh trên testnet
+// const contractTestnetAddress = "0x8f2f2c8404d9a9c559451f2f84ac79e9178ab9f2";
+// const contractTestnet = new web3Testnet.eth.Contract(contractABI.abi, contractTestnetAddress);
+
 // Địa chỉ ví thực hiện giao dịch trên blockchain
-const senderAddress = '0x17F99F3CFEF260Bd0479dC700134c4e372270079';
+const senderAddress = '0xD162e1022aE4CB213fB03Aa664492Cc134C6776d';
 
 // Khởi tạo Sequelize để kết nối MySQL
 const sequelize = new Sequelize('ecom', 'root', null, {
@@ -162,6 +171,80 @@ const logExistsInBlockchain = async (log) => {
     }
 };
 
+// /**
+//  * Thêm một bản ghi log vào blockchain testnet.
+//  */
+// const addLogToBlockchainTestnet = async (log) => {
+//     try {
+//         const receipt = await contractTestnet.methods.addLog(
+//             log.tableName,
+//             log.recordId.toString(),
+//             log.action,
+//             log.hash
+//         ).send({
+//             from: senderAddress,
+//             gas: 3000000
+//         });
+
+//         console.log('Log đã được thêm vào blockchain testnet:', receipt.transactionHash);
+//         return receipt;
+//     } catch (error) {
+//         console.error('Lỗi khi thêm log vào blockchain testnet:', error);
+//         throw error;
+//     }
+// };
+
+// /**
+//  * Lấy các log mới nhất từ blockchain testnet.
+//  */
+// const getLatestLogsTestnet = async (count = 1) => {
+//     try {
+//         const logsCount = await contractTestnet.methods.getLogCount().call();
+//         if (logsCount === 0) {
+//             console.log('Không có log nào trong blockchain testnet');
+//             return [];
+//         }
+
+//         const logs = [];
+//         const startIndex = Math.max(0, Number(logsCount) - count);
+
+//         for (let i = startIndex; i < logsCount; i++) {
+//             const log = await contractTestnet.methods.getLog(i).call();
+
+//             const events = await contractTestnet.getPastEvents('LogAdded', {
+//                 fromBlock: 0,
+//                 toBlock: 'latest'
+//             });
+
+//             let transactionHash = null;
+//             let blockHash = null;
+
+//             for (const event of events) {
+//                 if (event.returnValues.hash === log.hash) {
+//                     transactionHash = event.transactionHash;
+//                     blockHash = event.blockHash;
+//                     break;
+//                 }
+//             }
+
+//             logs.push({
+//                 tableName: log.tableName,
+//                 recordId: BigInt(log.recordId).toString(),
+//                 action: log.action,
+//                 hash: log.hash,
+//                 transactionHash: transactionHash || 'Không tìm thấy',
+//                 blockHash: blockHash || 'Không tìm thấy',
+//                 address: log.senderAddress,
+//                 timestamp: new Date(Number(log.timestamp) * 1000).toISOString()
+//             });
+//         }
+//         return logs;
+//     } catch (error) {
+//         console.error('Lỗi khi lấy log từ blockchain testnet:', error);
+//         throw error;
+//     }
+// };
+
 /**
  * Chạy toàn bộ quy trình đồng bộ dữ liệu từ database lên blockchain.
  */
@@ -177,12 +260,21 @@ const runSync = async () => {
                 const receipt = await addLogToBlockchain(log);
                 console.log(`Giao dịch thành công! Transaction Hash: ${receipt.transactionHash}, Block Hash: ${receipt.blockHash}`);
                 results.push({ log, transactionHash: receipt.transactionHash, blockHash: receipt.blockHash });
-            } else {
+            }
+            // if (!exists) {
+            //     const receipt = await addLogToBlockchainTestnet(log);
+            //     console.log(`Giao dịch thành công! Transaction Hash: ${receipt.transactionHash}, Block Hash: ${receipt.blockHash}`);
+            //     results.push({ log, transactionHash: receipt.transactionHash, blockHash: receipt.blockHash });
+            // }
+
+            else {
                 console.log(`Log với recordId ${log.recordId} đã tồn tại trong blockchain, bỏ qua.`);
             }
         }
 
         const latestLogs = await getLatestLogs();
+
+        // const getLatestLogsTestnet = await getLatestLogsTestnet(); , _getLatestLogsTestnet
         return { latestLogs };
     } catch (error) {
         console.error('Quá trình đồng bộ thất bại:', error);
@@ -204,8 +296,13 @@ module.exports = {
     connectDB,
     web3,
     contract,
+    // web3Testnet,
+    // contractTestnet,
+    // addLogToBlockchainTestnet,
+    // getLatestLogsTestnet,
     syncBlockchainLogs,
     addLogToBlockchain,
     getLatestLogs,
     runSync
 };
+

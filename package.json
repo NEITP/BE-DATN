@@ -14,6 +14,7 @@
   "author": "bingo2706",
   "license": "ISC",
   "dependencies": {
+    "@truffle/hdwallet-provider": "^2.1.15",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
