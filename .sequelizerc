@@ -1,0 +1,20 @@
+const path = require('path'); // Import module 'path' để làm việc với đường dẫn file
+
+module.exports = {
+    // Đường dẫn đến file config chứa thông tin cấu hình cơ sở dữ liệu (database)
+    'config': path.resolve('./src/config', 'config.json'),
+
+    // Đường dẫn đến thư mục chứa các mô hình (models) của Sequelize
+    'models-path': path.resolve('./src', 'models'),
+
+    // Đường dẫn đến thư mục chứa các tệp seeder để chèn dữ liệu mẫu vào database
+    'seeders-path': path.resolve('./src', 'seeders'),
+
+    // Đường dẫn đến thư mục chứa các tệp migration để quản lý thay đổi cấu trúc database
+    'migrations-path': path.resolve('./src', 'migrations')
+};
+// Công dụng:
+// config.json: Chứa thông tin về kết nối cơ sở dữ liệu như username, password, database, host, dialect (MySQL, PostgreSQL, v.v.).
+// models: Chứa các model Sequelize để thao tác với cơ sở dữ liệu.
+// seeders: Chứa các tệp seeder để thêm dữ liệu mặc định vào database (ví dụ: danh sách tài khoản admin, loại sản phẩm, v.v.).
+// migrations: Chứa các tệp migration để quản lý thay đổi cấu trúc bảng trong database.
